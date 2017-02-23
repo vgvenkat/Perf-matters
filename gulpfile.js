@@ -62,7 +62,7 @@ gulp.task('views', function(){
   return gulp.src('./views/**/**')
           .pipe(gulpif('*.css',cssnano()))
           .pipe(gulpif('*.js',uglify()))
-          .pipe(gulpif('*/images/*',imagemin()))
+          .pipe(gulpif('**/images/*',imagemin()))
           .pipe(gulpif('*.html', inlineCss()))
           .pipe(gulp.dest('dist/views'))
 })
