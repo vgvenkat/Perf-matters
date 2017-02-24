@@ -59,11 +59,12 @@ gulp.task('image-min', function(){
         .pipe(gulp.dest('dist/img'))
 })
 gulp.task('views', function(){
-  return gulp.src('./views/**/**')
-          .pipe(gulpif('*.css',cssnano()))
-          .pipe(gulpif('*.js',uglify()))
+  return gulp.src('./views/**')
+          .pipe(gulpif('./views/css/*.css',cssnano()))
+          .pipe(gulpif('./views/css/*.css',concat('view_main.css')))
+          .pipe(gulpif('js/*.js',uglify()))
           .pipe(gulpif('**/images/*',imagemin()))
-          .pipe(gulpif('*.html', inlineCss()))
+          .pipe(gulpif('*.html', minify({collapseWhitespace: true})))
           .pipe(gulp.dest('dist/views'))
 })
 gulp.task('folder-setup', function () {
