@@ -9,9 +9,7 @@
 
     <!-- Hmm, what is the impact of web fonts on speed? Measure it... -->
     <!-- <link href="//fonts.googleapis.com/css?family=Open+Sans:400,700" rel="stylesheet"> -->
-
-    <link href="dist/main.css" rel="stylesheet">
-
+    
 
   </head>
 
@@ -39,7 +37,10 @@
     <footer>
       <p>&copy; Web Performance 2014 <span id="crp-stats"></span></p>
     </footer>
-        <script>
+    <!-- build:css main.css -->
+    <link href="css/style.css" rel="stylesheet">
+    <!-- endbuild -->
+        <!--<script>
       (function(w,g){w['GoogleAnalyticsObject']=g;
       w[g]=w[g]||function(){(w[g].q=w[g].q||[]).push(arguments)};w[g].l=1*new Date();})(window,'ga');
 
@@ -47,7 +48,9 @@
       ga('create', 'UA-XXXX-Y');
       ga('send', 'pageview');
     </script>
-    <script src="http://www.google-analytics.com/analytics.js" async defer></script>
-    <script async src="dist/perfmatters.js"></script>
+    <script src="//www.google-analytics.com/analytics.js" async defer></script>-->
+    <!-- build:js  main.js async-->
+    <script async src="js/perfmatters.js"></script>
+    <!-- endbuild -->
   </body>
 </html>

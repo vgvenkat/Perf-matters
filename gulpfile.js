@@ -1,28 +1,31 @@
 var gulp = require('gulp')
 var ngrok = require('ngrok')
-var psi = require('psi')
 var sequence = require('run-sequence')
 var connect = require('gulp-connect')
 var concat = require('gulp-concat')
 var uglify = require('gulp-uglify')
 var cssnano = require('gulp-cssnano')
+var cleanCSS = require('gulp-clean-css');
 var del = require('del')
-var pump = require('pump')
 var inlineCss = require('gulp-inline-css')
 var minify = require('gulp-htmlmin')
 var gulpif = require('gulp-if')
 var imagemin = require('gulp-imagemin');
+var critical = require('critical').stream;
+var useref = require('gulp-useref');
+var imageResize = require('gulp-image-resize')
+var rename = require("gulp-rename");
 var site = '',
   port = 3000
 gulp.task('default', function () {
   console.log('just running gulp')
 })
-gulp.task('connect', function () {
+gulp.task('serve', function () {
   connect.server({
   	port: port
   	})
 })
-gulp.task('connect:dist',['folder-setup'], function () {
+gulp.task('serve:dist',['build'], function () {
   connect.server({
   	port: port,
     root:'dist'
@@ -31,52 +34,173 @@ gulp.task('connect:dist',['folder-setup'], function () {
 gulp.task('clean-dist', function () {
   return del(['dist/**'])
 })
-gulp.task('html-minify', function () {
-  return gulp.src('./**.html')
-        .pipe(inlineCss())
-        .pipe(minify({collapseWhitespace: true}))
-        .pipe(gulp.dest('dist'))
-})
-gulp.task('css-min', function () {
-  return gulp.src('css/*.css')
-        .pipe(cssnano())
-        .pipe(concat('main.css'))
-        .pipe(gulp.dest('./dist'))
-})
-gulp.task('js-min', function (cb) {
-  pump([
-    gulp.src('js/*.js'),
-    uglify(),
-    concat('main.js'),
-    gulp.dest('dist')
-  ],
-    cb
-  )
-})
-gulp.task('image-min', function(){
-  return gulp.src('./img/*')
-        .pipe(imagemin())
-        .pipe(gulp.dest('dist/img'))
-})
-gulp.task('views', function(){
-  return gulp.src('./views/**')
-          .pipe(gulpif('./views/css/*.css',cssnano()))
-          .pipe(gulpif('./views/css/*.css',concat('view_main.css')))
-          .pipe(gulpif('js/*.js',uglify()))
-          .pipe(gulpif('**/images/*',imagemin()))
-          .pipe(gulpif('*.html', minify({collapseWhitespace: true})))
-          .pipe(gulp.dest('dist/views'))
-})
-gulp.task('folder-setup', function () {
-  return sequence(
+gulp.task('build', function(){
+   return sequence(
 		'clean-dist',
-		'css-min',
-		'js-min',
-    'image-min',
-    'html-minify',
-    'views'
+    'html',
+    'ngrok-url'
 		)
 })
+gulp.task('critical-stream', function(){
+  return gulp.src('dist/**.html')
+          .pipe(critical({
+            base:'dist/',
+            inline:true,
+             minify: true,
+            extract:true,
+            css:['dist/main.css']
+          }))
+          .pipe(gulp.dest('dist'))
+})
+gulp.task('critical-views-stream', function(){
+  return gulp.src('dist/views/**.html')
+          .pipe(critical({
+            inline: true,
+            base: 'dist/views',
+            css: ['dist/views/view.css'],
+            minify: true,
+            extract:true,
+            dest: 'pizza.html',
+            width: 320,
+            height: 480
+          }))
+          .pipe(gulp.dest('dist'))
+})
+gulp.task('critical',  function (cb) {
+ 
+ return   critical.generate({
+        inline: true,
+        base: 'dist/',
+        css: ['dist/main.css'],
+        src: 'index.html',
+        minify: true,
+        
+        dest: 'index.html',
+        width: 320,
+        height: 480
+    })
+});
+gulp.task('critical-views', function(){
+ return critical.generate({
+        inline: true,
+        base: 'dist/views',
+        src: 'pizza.html',
+        minify: true,
+        
+        dest: 'pizza.html',
+        width: 320,
+        height: 480
+    });
+})
+gulp.task('html', function(){
+   return sequence(
+     'html-min',
+     'views',
+     'imageResize',
+     'views-img',
+     'critical-stream',
+    'critical-views-stream',
+    'views-html',
+    'html-inlineCss'
+     
+   )
+})
+gulp.task('html-inlineCss', function () {
+  return gulp.src('dist/**.html')
+        .pipe(gulpif('*.html',minify({
+          collapseWhitespace: true,
+          removeComments: true
+        })))
+        .pipe(gulp.dest('dist'))
+})
+gulp.task('html-min', function () {
+  return gulp.src('./**.html')
+        .pipe(useref())
+        .pipe(gulpif('*.js', uglify()))
+        .pipe(gulpif('*.css', cleanCSS({
+          level:2
+        })))
+        .pipe(gulp.dest('dist'))
+})
+gulp.task('views-html', function () {
+  return gulp.src('dist/views/**.html')
+        .pipe(gulpif('*.html',minify({collapseWhitespace: true, removeComments: true})))
+        .pipe(gulp.dest('dist/views'))
+})
+gulp.task('views', function(){
+  return gulp.src('./views/**.html')
+          .pipe(useref())
+          .pipe(gulpif('*.js', uglify()))
+          .pipe(gulpif('*.css', cleanCSS({
+          level:2
+        })))
+          
+          .pipe(gulp.dest('dist/views'))
+})
+gulp.task('views-img',function(){
+  return gulp.src('./views/images/*.{jpg,png}')
+          .pipe(imageResize({
+              imageMagick: true,
+              quality: 0.25,
+              height: 800
+        }))
+        .pipe(gulp.dest('dist/views/images'));
+})
+gulp.task('imageResize', function(){
+  return gulp.src('./img/*.{jpg,png}')
+        .pipe(imageResize({
+          imageMagick: true,
+          format:"jpg",
+          quality: 0.25,
+          height: 800
+        }))
+      .pipe(gulp.dest('dist/img'));
+})
+gulp.task('mobiledev-resize', function(){
+  return gulp.src('./img/mobilewebdev.jpg')
+          .pipe(imageResize({
+              width : 602,
+              height : 306,
+              crop : true,
+              upscale : false
+            }))
+    .pipe(gulp.dest('./img'))
+  
+})
+gulp.task('pizzeria-resize', function () {
+  gulp.src('views/images/pizzeria.jpg')
+    .pipe(imageResize({
+      width : 100,
+      height : 61,
+      crop : true,
+      upscale : false
+    }))
+    .pipe(rename(function (path) { path.basename += "-thumbnail"; }))
+    .pipe(gulp.dest('./views/images'));
+});
+gulp.task('pizzeria-resize-big', function () {
+  gulp.src('views/images/pizzeria.jpg')
+    .pipe(imageResize({
+      width : 720,
+      height : 540,
+      crop : true,
+      upscale : false
+    }))
+    .pipe(rename(function (path) { path.basename += "-big"; }))
+    .pipe(gulp.dest('./views/images'));
+});
+gulp.task('image-min', function(){
+  return gulp.src('./img/*.{jpg,png}')
+        .pipe(imagemin([
+            imagemin.gifsicle(),
+            imagemin.jpegtran({ progressive: true }),
+            imagemin.optipng(),
+            imagemin.svgo()
+        ]))
+        .pipe(gulp.dest('dist/img'))
+})
+
+
 gulp.task('ngrok-url', function (cb) {
   return ngrok.connect(port, function (err, url) {
     site = url
@@ -84,37 +208,4 @@ gulp.task('ngrok-url', function (cb) {
     cb()
   })
 })
-gulp.task('psi-mobile', function () {
-  return psi(site, {
-        // key: key
-    nokey: 'true',
-    strategy: 'mobile'
-  }).then(function (data) {
-    console.log('Speed score: ' + data.ruleGroups.SPEED.score)
-    console.log('Usability score: ' + data.ruleGroups.USABILITY.score)
-  })
-})
 
-gulp.task('psi-desktop', function () {
-  return psi(site, {
-    nokey: 'true',
-        // key: key,
-    strategy: 'desktop'
-  }).then(function (data) {
-    console.log('Speed score: ' + data.ruleGroups.SPEED.score)
-  })
-})
-gulp.task('psi-seq', function (cb) {
-  return sequence(
-  	'folder-setup',
-  	'connect',
-    'ngrok-url',
-    'psi-desktop',
-    'psi-mobile',
-    cb
-  )
-})
-gulp.task('psi', ['psi-seq'], function () {
-  console.log('Woohoo! Check out your page speed scores!')
-  process.exit()
-})
