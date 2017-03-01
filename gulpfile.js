@@ -15,6 +15,7 @@ var critical = require('critical').stream;
 var useref = require('gulp-useref');
 var imageResize = require('gulp-image-resize')
 var rename = require("gulp-rename");
+var inline = require('gulp-inline')
 var site = '',
   port = 3000
 gulp.task('default', function () {
@@ -48,7 +49,8 @@ gulp.task('critical-stream', function(){
             inline:true,
              minify: true,
             extract:true,
-            css:['dist/main.css']
+            css:['dist/main.css'],
+            
           }))
           .pipe(gulp.dest('dist'))
 })
@@ -60,46 +62,20 @@ gulp.task('critical-views-stream', function(){
             css: ['dist/views/view.css'],
             minify: true,
             extract:true,
-            dest: 'pizza.html',
+            dest: 'pizza-critical.html',
             width: 320,
             height: 480
           }))
           .pipe(gulp.dest('dist'))
 })
-gulp.task('critical',  function (cb) {
- 
- return   critical.generate({
-        inline: true,
-        base: 'dist/',
-        css: ['dist/main.css'],
-        src: 'index.html',
-        minify: true,
-        
-        dest: 'index.html',
-        width: 320,
-        height: 480
-    })
-});
-gulp.task('critical-views', function(){
- return critical.generate({
-        inline: true,
-        base: 'dist/views',
-        src: 'pizza.html',
-        minify: true,
-        
-        dest: 'pizza.html',
-        width: 320,
-        height: 480
-    });
-})
+
 gulp.task('html', function(){
    return sequence(
      'html-min',
      'views',
      'imageResize',
      'views-img',
-     'critical-stream',
-    'critical-views-stream',
+   
     'views-html',
     'html-inlineCss'
      
@@ -111,8 +87,14 @@ gulp.task('html-inlineCss', function () {
           collapseWhitespace: true,
           removeComments: true
         })))
+        .pipe(inline({
+            base: 'dist/',
+            disabledTypes: ['svg', 'img', 'js'], // Only inline css files 
+          }))
         .pipe(gulp.dest('dist'))
 })
+
+
 gulp.task('html-min', function () {
   return gulp.src('./**.html')
         .pipe(useref())
@@ -137,11 +119,12 @@ gulp.task('views', function(){
           
           .pipe(gulp.dest('dist/views'))
 })
+
 gulp.task('views-img',function(){
   return gulp.src('./views/images/*.{jpg,png}')
           .pipe(imageResize({
-              imageMagick: true,
-              quality: 0.25,
+             
+              quality: 0.20,
               height: 800
         }))
         .pipe(gulp.dest('dist/views/images'));
@@ -149,9 +132,9 @@ gulp.task('views-img',function(){
 gulp.task('imageResize', function(){
   return gulp.src('./img/*.{jpg,png}')
         .pipe(imageResize({
-          imageMagick: true,
+          
           format:"jpg",
-          quality: 0.25,
+          quality: 0.20,
           height: 800
         }))
       .pipe(gulp.dest('dist/img'));
