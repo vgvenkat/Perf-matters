@@ -403,6 +403,7 @@ var pizzaElementGenerator = function(i) {
 };
 
 // resizePizzas(size) is called when the slider in the "Our Pizzas" section of the website moves.
+// --Update-- 1 Code rewrite when redrawing pizza on slider change
 var resizePizzas = function(size) {
   window.performance.mark("mark_start_resize");   // User Timing API function
   var sizeValue = 0;
@@ -456,6 +457,7 @@ var resizePizzas = function(size) {
 
     return dx;
   }
+  //--Update-- 2 Clean up with getElementsByClassName
   var pizzaContainer = document.getElementsByClassName("randomPizzaContainer");
   // Iterates through pizza elements on the page and changes their widths
   function changePizzaSizes(size) {
@@ -509,8 +511,11 @@ function logAverageFrame(times) {   // times is the array of User Timing measure
 // The following code for sliding background pizzas was pulled from Ilya's demo found at:
 // https://www.igvita.com/slides/2012/devtools-tips-and-tricks/jank-demo.html
 // Moves the sliding background pizzas based on scroll position
+
+//--Update-- 3 ComplexMath handled outside loop, major updates in translate and %5 tricks
 var bodyTop, complexMath = [];
 function updatePositions() {
+  ticking = false;
   frame++;
   window.performance.mark("mark_start_frame");
   bodyTop = (document.body.scrollTop / 1250); 
@@ -533,7 +538,7 @@ function updatePositions() {
     logAverageFrame(timesToUpdatePosition);
   }
 }
-var ticking = false;
+//--Update-- 4 Throttle animations on scroll https://developer.mozilla.org/en-US/docs/Web/Events/scroll
 function scrollAnimation(){
   if(!ticking){
      requestAnimationFrame(updatePositions);
@@ -541,7 +546,7 @@ function scrollAnimation(){
   ticking = true;
 }
 // runs updatePositions on scroll
-window.addEventListener('scroll', updatePositions);
+window.addEventListener('scroll', scrollAnimation);
 
 // Generates the sliding pizzas when the page loads.
 document.addEventListener('DOMContentLoaded', function() {
