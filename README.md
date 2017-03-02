@@ -2,9 +2,10 @@
 
 ###Optimize the pages for PSI>=90
 1. Checkout repo
-2. `npm install`
-3. `gulp serve:dist` will render the production version of the code base.
-4. Above command will also serve out a ngrok url which can be tested in PSI website.
+2. If you have gulp-cli globally installed, skip this. Else `npm install gulp-cli -g`
+3. `npm install`
+4. `gulp serve:dist` will render the production version of the code base.
+5. Above command will also serve out a ngrok url which can be tested in PSI website.
 
 ![](./PSI.png)
 
