@@ -5,7 +5,7 @@
 2. `npm install`
 3. `gulp serve:dist` will render the production version of the code base.
 4. Above command will also serve out a ngrok url which can be tested in PSI website.
-[PSI Landing page score](PSI.png)
+[PSI.png./]
 
 ####Tricks used update page speed : 
 - Imagemin for compressed images
